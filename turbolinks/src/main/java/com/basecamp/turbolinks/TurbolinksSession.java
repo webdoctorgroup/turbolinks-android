@@ -693,6 +693,10 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
         pullToRefreshEnabled = enabled;
     }
 
+    public void setLocation(String newLocation) {
+        location = newLocation;
+    }
+
     /**
      * <p>Provides the status of whether Turbolinks is initialized and ready for use.</p>
      *
