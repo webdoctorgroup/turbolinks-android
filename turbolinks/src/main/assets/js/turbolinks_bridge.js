@@ -87,6 +87,7 @@ TLWebView.prototype = {
     },
 
     visitCompleted: function(visit) {
+        visit.followRedirect()
         TurbolinksNative.visitCompleted(visit.identifier, visit.restorationIdentifier)
     },
 
