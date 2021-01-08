@@ -104,7 +104,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
                             bridgeInjectionInProgress = true;
                             TurbolinksHelper.injectTurbolinksBridge(TurbolinksSession.this, applicationContext, webView);
                             TurbolinksLog.d("Bridge injected");
-
+                            setLocationFromWebViewUrl();
                             turbolinksAdapter.onPageFinished();
                         }
                     }
@@ -485,6 +485,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
             TurbolinksHelper.runOnMainThread(applicationContext, new Runnable() {
                 @Override
                 public void run() {
+                    setLocationFromWebViewUrl();
                     turbolinksAdapter.visitCompleted();
                     turbolinksView.getRefreshLayout().setRefreshing(false);
                 }
@@ -693,10 +694,6 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
         pullToRefreshEnabled = enabled;
     }
 
-    public void setLocation(String newLocation) {
-        location = newLocation;
-    }
-
     /**
      * <p>Provides the status of whether Turbolinks is initialized and ready for use.</p>
      *
@@ -768,6 +765,13 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
 
         // Executed from here to account for progress indicator delay
         turbolinksView.showProgress(progressView, progressIndicator, progressIndicatorDelay);
+    }
+
+    private void setLocationFromWebViewUrl() {
+        final String currentUrl = webView.getUrl();
+        if (currentUrl != null) {
+            location = currentUrl;
+        }
     }
 
     /**
