@@ -95,6 +95,21 @@ public class TurbolinksView extends FrameLayout {
     // Package public
     // ---------------------------------------------------
 
+    void cleanup() {
+        refreshLayout.setCallback(null);
+        refreshLayout.removeAllViews();
+
+        if (progressView != null) {
+            removeView(progressView);
+            progressView = null;
+        }
+
+        if (screenshotView != null) {
+            removeView(screenshotView);
+            screenshotView = null;
+        }
+    }
+
     /**
      * <p>Shows a progress view or a generated screenshot of the webview content (if available)
      * on top of the webview. When advancing to a new url, this indicates that the page is still

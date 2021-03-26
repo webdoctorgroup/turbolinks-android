@@ -232,6 +232,19 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
      * @return The TurbolinksSession to continue the chained calls.
      */
     public TurbolinksSession activity(Activity activity) {
+        if (this.activity != activity) {
+            if (turbolinksView != null && turbolinksView.getContext() == this.activity) {
+                turbolinksView.cleanup();
+                turbolinksView = null;
+            }
+            if (progressView != null && progressView.getContext() == this.activity) {
+                progressView = null;
+            }
+            if (progressIndicator != null && progressIndicator.getContext() == this.activity) {
+                progressIndicator = null;
+            }
+        }
+
         this.activity = activity;
 
         Context webViewContext = webView.getContext();
@@ -712,6 +725,17 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
     public void visitLocationWithAction(String location, String action) {
         this.location = location;
         runJavascript("webView.visitLocationWithActionAndRestorationIdentifier", TurbolinksHelper.encodeUrl(location), action, getRestorationIdentifierFromMap());
+    }
+
+    public void destroySession() {
+        if (turbolinksView != null) {
+            turbolinksView.cleanup();
+            turbolinksView = null;
+        }
+        activity = null;
+        progressView = null;
+        progressIndicator = null;
+        turbolinksAdapter = null;
     }
 
     // ---------------------------------------------------
