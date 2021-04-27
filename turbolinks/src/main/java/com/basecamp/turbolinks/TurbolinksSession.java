@@ -76,7 +76,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
      *
      * @param context Any Android context.
      */
-    private TurbolinksSession(final Context context) {
+    protected TurbolinksSession(final Context context) {
         if (context == null) {
             throw new IllegalArgumentException("Context must not be null.");
         }
