@@ -42,7 +42,6 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
     boolean webViewAttachedToNewParent;
     int progressIndicatorDelay;
     long previousOverrideTime;
-    Activity activity;
     HashMap<String, Object> javascriptInterfaces = new HashMap<>();
     HashMap<String, String> restorationIdentifierMap = new HashMap<>();
     String location;
@@ -64,7 +63,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
     static final String JAVASCRIPT_INTERFACE_NAME = "TurbolinksNative";
     static final int PROGRESS_INDICATOR_DELAY = 500;
 
-    final Context applicationContext;
+    Context context;
     final WebView webView;
 
     // ---------------------------------------------------
@@ -81,12 +80,12 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
             throw new IllegalArgumentException("Context must not be null.");
         }
 
-        this.applicationContext = context.getApplicationContext();
+        this.context = context;
         this.screenshotsEnabled = true;
         this.pullToRefreshEnabled = true;
         this.webViewAttachedToNewParent = false;
 
-        this.webView = TurbolinksHelper.createWebView(applicationContext);
+        this.webView = TurbolinksHelper.createWebView(context);
         this.webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE_NAME);
         this.webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -102,7 +101,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
                     public void onReceiveValue(String s) {
                         if (Boolean.parseBoolean(s) && !bridgeInjectionInProgress) {
                             bridgeInjectionInProgress = true;
-                            TurbolinksHelper.injectTurbolinksBridge(TurbolinksSession.this, applicationContext, webView);
+                            TurbolinksHelper.injectTurbolinksBridge(TurbolinksSession.this, context, webView);
                             TurbolinksLog.d("Bridge injected");
                             setLocationFromWebViewUrl();
                             turbolinksAdapter.onPageFinished();
@@ -232,26 +231,6 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
      * @return The TurbolinksSession to continue the chained calls.
      */
     public TurbolinksSession activity(Activity activity) {
-        if (this.activity != activity) {
-            if (turbolinksView != null && turbolinksView.getContext() == this.activity) {
-                turbolinksView.cleanup();
-                turbolinksView = null;
-            }
-            if (progressView != null && progressView.getContext() == this.activity) {
-                progressView = null;
-            }
-            if (progressIndicator != null && progressIndicator.getContext() == this.activity) {
-                progressIndicator = null;
-            }
-        }
-
-        this.activity = activity;
-
-        Context webViewContext = webView.getContext();
-        if (webViewContext instanceof MutableContextWrapper) {
-            ((MutableContextWrapper) webViewContext).setBaseContext(this.activity);
-        }
-
         return this;
     }
 
@@ -387,7 +366,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
     public void visitProposedToLocationWithAction(final String location, final String action) {
         TurbolinksLog.d("visitProposedToLocationWithAction called");
 
-        TurbolinksHelper.runOnMainThread(applicationContext, new Runnable() {
+        TurbolinksHelper.runOnMainThread(new Runnable() {
             @Override
             public void run() {
                 turbolinksAdapter.visitProposedToLocationWithAction(location, action);
@@ -451,7 +430,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
         hideProgressView(visitIdentifier);
 
         if (TextUtils.equals(visitIdentifier, currentVisitIdentifier)) {
-            TurbolinksHelper.runOnMainThread(applicationContext, new Runnable() {
+            TurbolinksHelper.runOnMainThread(new Runnable() {
                 @Override
                 public void run() {
                     turbolinksAdapter.requestFailedWithStatusCode(statusCode);
@@ -495,7 +474,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
         addRestorationIdentifierToMap(restorationIdentifier);
 
         if (TextUtils.equals(visitIdentifier, currentVisitIdentifier)) {
-            TurbolinksHelper.runOnMainThread(applicationContext, new Runnable() {
+            TurbolinksHelper.runOnMainThread(new Runnable() {
                 @Override
                 public void run() {
                     setLocationFromWebViewUrl();
@@ -520,7 +499,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
 
         resetToColdBoot();
 
-        TurbolinksHelper.runOnMainThread(applicationContext, new Runnable() {
+        TurbolinksHelper.runOnMainThread(new Runnable() {
             @Override
             public void run() { // route through normal chain so progress view is shown, regular logging, etc.
                 turbolinksAdapter.pageInvalidated();
@@ -545,7 +524,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
     @SuppressWarnings("unused")
     @android.webkit.JavascriptInterface
     public void hideProgressView(final String visitIdentifier) {
-        TurbolinksHelper.runOnMainThread(applicationContext, new Runnable() {
+        TurbolinksHelper.runOnMainThread(new Runnable() {
             @Override
             public void run() {
                 /**
@@ -579,7 +558,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
         if (turbolinksIsReady) {
             bridgeInjectionInProgress = false;
 
-            TurbolinksHelper.runOnMainThread(applicationContext, new Runnable() {
+            TurbolinksHelper.runOnMainThread(new Runnable() {
                 @Override
                 public void run() {
                     TurbolinksLog.d("TurbolinksSession is ready");
@@ -605,7 +584,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
     @SuppressWarnings("unused")
     @android.webkit.JavascriptInterface
     public void turbolinksDoesNotExist() {
-        TurbolinksHelper.runOnMainThread(applicationContext, new Runnable() {
+        TurbolinksHelper.runOnMainThread(new Runnable() {
             @Override
             public void run() {
                 TurbolinksLog.d("Error instantiating turbolinks_bridge.js - resetting to cold boot.");
@@ -646,7 +625,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
      * @return The attached activity.
      */
     public Activity getActivity() {
-        return activity;
+        return null;
     }
 
     /**
@@ -675,7 +654,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
      * @param params       A comma delimited list of params. Params will be automatically JSONified.
      */
     public void runJavascript(final String functionName, final Object... params) {
-        TurbolinksHelper.runJavascript(applicationContext, webView, functionName, params);
+        TurbolinksHelper.runJavascript(webView, functionName, params);
     }
 
     /**
@@ -684,7 +663,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
      * @param rawJavascript The full Javascript string that will be executed by the WebView.
      */
     public void runJavascriptRaw(String rawJavascript) {
-        TurbolinksHelper.runJavascriptRaw(applicationContext, webView, rawJavascript);
+        TurbolinksHelper.runJavascriptRaw(webView, rawJavascript);
     }
 
     /**
@@ -732,7 +711,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
             turbolinksView.cleanup();
             turbolinksView = null;
         }
-        activity = null;
+        context = null;
         progressView = null;
         progressIndicator = null;
         turbolinksAdapter = null;
@@ -748,8 +727,8 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
      * @param value Restoration ID provided by Turbolinks.
      */
     private void addRestorationIdentifierToMap(String value) {
-        if (activity != null) {
-            restorationIdentifierMap.put(activity.toString(), value);
+        if (context != null) {
+            restorationIdentifierMap.put(context.toString(), value);
         }
     }
 
@@ -759,7 +738,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
      * @return Restoration ID for the current activity.
      */
     private String getRestorationIdentifierFromMap() {
-        return restorationIdentifierMap.get(activity.toString());
+        return restorationIdentifierMap.get(context.toString());
     }
 
     /**
@@ -771,14 +750,14 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
     private void initProgressView() {
         // No custom progress view provided, use default
         if (progressView == null) {
-            progressView = LayoutInflater.from(activity).inflate(R.layout.turbolinks_progress, turbolinksView, false);
+            progressView = LayoutInflater.from(context).inflate(R.layout.turbolinks_progress, turbolinksView, false);
 
             TurbolinksLog.d("TurbolinksSession background: " + turbolinksView.getBackground());
             progressView.setBackground(turbolinksView.getBackground());
             progressIndicator = progressView.findViewById(R.id.turbolinks_default_progress_indicator);
             progressIndicatorDelay = PROGRESS_INDICATOR_DELAY;
 
-            Drawable background = turbolinksView.getBackground() != null ? turbolinksView.getBackground() : new ColorDrawable(activity.getResources().getColor(android.R.color.white));
+            Drawable background = turbolinksView.getBackground() != null ? turbolinksView.getBackground() : new ColorDrawable(context.getResources().getColor(android.R.color.white));
             progressView.setBackground(background);
         }
 
@@ -815,7 +794,7 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
      * and location}) are set before calling {@link #visit(String)}.</p>
      */
     private void validateRequiredParams() {
-        if (activity == null) {
+        if (context == null) {
             throw new IllegalArgumentException("TurbolinksSession.activity(activity) must be called with a non-null object.");
         }
 

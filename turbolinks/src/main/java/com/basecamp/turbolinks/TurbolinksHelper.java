@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
@@ -86,7 +87,7 @@ class TurbolinksHelper {
     static void injectTurbolinksBridge(final TurbolinksSession turbolinksSession, Context context, WebView webView) {
         try {
             String jsCall = String.format(scriptInjectionFormat, TurbolinksHelper.getContentFromAssetFile(context, "js/turbolinks_bridge.js"));
-            runJavascriptRaw(context, webView, jsCall);
+            runJavascriptRaw(webView, jsCall);
         } catch (IOException e) {
             TurbolinksLog.e("Error injecting script file into webview: " + e.toString());
         }
@@ -96,12 +97,11 @@ class TurbolinksHelper {
      * <p>JSONifies any arbitrary number of params and runs the the Javascript function in the
      * webView.</p>
      *
-     * @param context      An activity context.
      * @param webView      The shared webView.
      * @param functionName The Javascript function name only (no parenthesis or parameters).
      * @param params       A comma delimited list of parameter values.
      */
-    static void runJavascript(Context context, final WebView webView, String functionName, Object... params) {
+    static void runJavascript(final WebView webView, String functionName, Object... params) {
         final String fullJs;
 
         if (params != null) {
@@ -115,7 +115,7 @@ class TurbolinksHelper {
             fullJs = String.format("javascript: %s();", functionName);
         }
 
-        runOnMainThread(context, new Runnable() {
+        runOnMainThread(new Runnable() {
             @Override
             public void run() {
                 webView.loadUrl(fullJs);
@@ -127,12 +127,11 @@ class TurbolinksHelper {
      * <p>Runs raw Javascript that's passed in. You are responsible for encoding/escaping the
      * function call.</p>
      *
-     * @param context    An activity context.
      * @param webView    The shared webView.
      * @param javascript The raw Javascript to be executed, fully escaped/encoded in advance.
      */
-    static void runJavascriptRaw(Context context, final WebView webView, final String javascript) {
-        runOnMainThread(context, new Runnable() {
+    static void runJavascriptRaw(final WebView webView, final String javascript) {
+        runOnMainThread(new Runnable() {
             @Override
             public void run() {
                 webView.loadUrl("javascript:" + javascript);
@@ -143,11 +142,10 @@ class TurbolinksHelper {
     /**
      * <p>Executes a given runnable on the main thread.</p>
      *
-     * @param context  An activity context.
      * @param runnable A runnable to execute on the main thread.
      */
-    static void runOnMainThread(Context context, Runnable runnable) {
-        Handler handler = new Handler(context.getMainLooper());
+    static void runOnMainThread(Runnable runnable) {
+        Handler handler = new Handler(Looper.getMainLooper());
         handler.post(runnable);
     }
 
