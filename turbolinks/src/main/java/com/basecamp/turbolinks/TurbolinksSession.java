@@ -727,17 +727,6 @@ public class TurbolinksSession implements TurbolinksScrollUpCallback {
         runJavascript("webView.visitLocationWithActionAndRestorationIdentifier", TurbolinksHelper.encodeUrl(location), action, getRestorationIdentifierFromMap());
     }
 
-    public void destroySession() {
-        if (turbolinksView != null) {
-            turbolinksView.cleanup();
-            turbolinksView = null;
-        }
-        activity = null;
-        progressView = null;
-        progressIndicator = null;
-        turbolinksAdapter = null;
-    }
-
     // ---------------------------------------------------
     // Private
     // ---------------------------------------------------
